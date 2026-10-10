@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NC Driver's Ed Prep & Practice Flashcards</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --accent-hover: #0284c7;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --border: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        header {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pro-badge {
+            background-color: #f59e0b;
+            color: #000;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            background-color: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .stats {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .card-wrapper {
+            width: 100%;
+            height: 320px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 16px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .card-front {
+            font-size: 1.25rem;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            font-size: 1.15rem;
+            color: var(--accent);
+            line-height: 1.5;
+            background-color: #172554;
+            border-color: #1e40af;
+        }
+
+        .hint-text {
+            position: absolute;
+            bottom: 15px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--card-bg);
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background-color: var(--border);
+        }
+
+        button.primary {
+            background-color: var(--accent);
+            color: #000;
+            border: none;
+        }
+
+        button.primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        /* Paywall Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal h2 {
+            margin-bottom: 15px;
+            color: var(--accent);
+        }
+
+        .modal p {
+            color: var(--text-muted);
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .price {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 25px;
+        }
+
+        .price span {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">NC Driver's Ed</div>
+        <div class="pro-badge">PRO ACCESS</div>
+    </header>
+
+    <div class="container">
+        <div class="stats">
+            <span id="card-counter">Card 1 of 128</span>
+            <span id="deck-status">NC Permit Prep</span>
+        </div>
+
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="card-wrapper" onclick="flipCard()">
+            <div class="flashcard" id="flashcard">
+                <div class="card-front">
+                    <p id="question-text">Loading question...</p>
+                    <span class="hint-text">Click to flip answer</span>
+                </div>
+                <div class="card-back">
+                    <p id="answer-text">Loading answer...</p>
+                    <span class="hint-text">Click to flip question</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="prevCard()">Previous</button>
+            <button onclick="flipCard()">Flip</button>
+            <button class="primary" onclick="nextCard()">Next</button>
+        </div>
+    </div>
+
+    <!-- Paywall Modal -->
+    <div class="modal-overlay" id="paywall-modal">
+        <div class="modal">
+            <h2>Unlock Full Access</h2>
+            <p>You've completed the preview set. Unlock all 128 North Carolina DMV practice questions to guarantee a first-time pass.</p>
+            <div class="price">$14.99 <span>/ lifetime</span></div>
+            <button class="primary" style="width: 100%; padding: 16px;" onclick="handleCheckout()">Get Unlimited Access</button>
+        </div>
+    </div>
+
+    <script>
+        const flashcards = [
+            { q: "What should you do if your gas pedal sticks while driving?", a: "Shift to Neutral first, apply gentle brakes, and steer onto the shoulder." },
+            { q: "What should you do if your tires blow out at highway speeds?", a: "Hold steering wheel firmly, keep vehicle straight, ease off gas, and do NOT hit brakes until vehicle slows." },
+            { q: "What is the proper procedure for brake failure?", a: "Shift to a lower gear, pump the brake pedal fast and hard (non-ABS), and apply the parking brake gradually." },
+            { q: "What should you do if your vehicle begins to hydroplane or skid on wet roads?", a: "Ease your foot off the gas pedal, do NOT hit the brakes, and steer in the direction the rear of the car is skidding." },
+            { q: "What should you do if you miss your freeway exit?", a: "Continue to the next exit to turn around—never back up on the shoulder or cross a median." },
+            { q: "What is the rule when entering an unmarked or blind intersection?", a: "Stop completely, then creep/inch forward slowly until you can clearly see before moving through." },
+            { q: "What should you do if an emergency vehicle with flashing lights approaches?", a: "Pull over to the right edge of the road and remain stopped until it passes." },
+            { q: "What does the Move Over law require if you cannot safely change lanes for a stopped emergency vehicle?", a: "Slow down to at least 20 mph below the posted speed limit." },
+            { q: "When are roads most slippery during rain?", a: "Just after it begins to drizzle or rain (oil rises to the road surface before being washed away)." },
+            { q: "What should you do if you run off the pavement onto the shoulder?", a: "Gradually ease off the gas pedal, keep a firm grip on the steering wheel, and steer gently back onto the road when speed is reduced." },
+            { q: "What is the rule for driving in heavy fog, rain, or snow?", a: "Use low-beam headlights only—high beams reflect light back into your eyes and blind you." },
+            { q: "What should you do to dry out wet brakes after driving through deep water?", a: "Drive slowly and gently apply light pressure to the brake pedal for a short distance." },
+            { q: "Who has the right-of-way when three vehicles arrive at a 4-way stop at the same time?", a: "The vehicle on the right side always has the right-of-way." },
+            { q: "What should you do when entering a traffic circle or roundabout?", a: "Yield to vehicles already inside the traffic circle." },
+            { q: "What is the rule for turning right at a red light in NC?", a: "Come to a complete stop first, yield to pedestrians and oncoming traffic, and turn when clear (unless a 'No Turn on Red' sign is posted)." },
+            { q: "What does a flashing red light mean?", a: "Same as a stop sign: come to a complete stop and proceed only when safe." },
+            { q: "What does a flashing yellow light mean?", a: "Slow down and proceed with caution." },
+            { q: "What should you do if you pull up to a red arrow light?", a: "Stop completely—turning in the direction of the arrow is prohibited while red." },
+            { q: "What should you do if you are in the wrong lane to make a turn at an intersection?", a: "Continue straight through the intersection to the next street, then turn—never make a last-second turn across lanes." },
+            { q: "When driving down a steep hill, what should you do to control speed?", a: "Shift into a lower gear to let engine braking help slow the vehicle." },
+            { q: "What is the proper way to check your blind spots before changing lanes?", a: "Perform a quick shoulder check by turning your head to glance over your shoulder in the direction you want to move." },
+            { q: "How often should defensive drivers check their rearview and side mirrors?", a: "Roughly every 10 seconds." },
+            { q: "How far ahead should you look when driving on highways?", a: "Look 10 to 15 seconds ahead of your vehicle to spot potential hazards early." },
+            { q: "How should you react to a farm vehicle traveling on a two-lane road?", a: "Wait patiently behind it until the farm vehicle pulls over or you have a clear, legal passing zone with plenty of visibility." },
+            { q: "What is the 'No-Zone' around large trucks?", a: "The massive blind spots in front, behind, and on both sides of a truck where cars disappear from the driver's mirrors." },
+            { q: "If a truck in front of you is turning right, why might it swing left first?", a: "Large trucks need wide turning room and must swing left to clear the curb on a right-hand turn." },
+            { q: "Who must stop for a stopped school bus on a 2-lane road?", a: "Traffic in BOTH directions must stop completely." },
+            { q: "Who must stop for a stopped school bus on a 4-lane road with NO median?", a: "Traffic in BOTH directions must stop completely." },
+            { q: "Who must stop for a stopped school bus on a 4-lane divided highway WITH a physical median?", a: "Only traffic following the bus must stop; oncoming traffic across the median may proceed." },
+            { q: "Who must stop for a stopped school bus on a 4-lane road with a central turn lane (5-lane total)?", a: "Traffic in BOTH directions must stop completely (a turn lane is NOT a physical median)." },
+            { q: "When are school buses required to stop at all railroad crossings?", a: "Always—school buses must stop at every railroad crossing regardless of whether a train is coming." },
+            { q: "What pedestrian group accounts for the majority of pedestrian traffic fatalities in cities?", a: "Elderly individuals (not children or teenagers)." },
+            { q: "In city traffic, what fraction of traffic fatalities are pedestrians?", a: "2 out of every 5 traffic deaths." },
+            { q: "What should pedestrians walking along a road at night wear or carry?", a: "Wear white or reflective clothing or carry a light." },
+            { q: "If you are taking over-the-counter medicine, what is your legal responsibility before driving?", a: "Check warning labels for drowsiness; driving while impaired by OTC drugs carries the same legal penalty as alcohol." },
+            { q: "What should you check for when driving regarding OTC drugs?", a: "Check warning labels for drowsiness; driving while impaired by OTC drugs carries the same legal penalty as alcohol." },
+            { q: "What system is failing if your vehicle sways freely or bounces continuously?", a: "The suspension system." },
+            { q: "What is the 'Fender Bender Rule' after a minor crash with no injuries?", a: "Move the vehicles off the main roadway onto the shoulder to avoid blocking traffic." },
+            { q: "When must you report a crash immediately to law enforcement?", a: "If it involves injury, death, or total property damage of $1,000 or more." },
+            { q: "What happens if you are convicted of street racing in NC?", a: "Your vehicle will be seized and impounded, and your license will be revoked." },
+            { q: "What should you do if your headlights suddenly go out while driving at night?", a: "Try turning the light switch on and off, turn on hazard/turn signals, and pull off the road safely." },
+            { q: "What should you do if you meet a vehicle driving toward you in your lane?", a: "Honk your horn, flash your lights, and steer right toward the shoulder." },
+            { q: "What should you do if you get tired on a long road trip?", a: "Stop and rest—pull into a rest area or safe location every 100 miles or 2 hours." },
+            { q: "How can you tell if the road ahead is bumpy or rough at night?", a: "Watch the taillights of the vehicles driving ahead of you bounce up and down." },
+            { q: "When should you turn on your headlights when using windshield wipers?", a: "Whenever wipers are used continuously due to rain, snow, fog, or mist." },
+            { q: "What should you do when entering a highway from an acceleration lane?", a: "Match the speed of highway traffic and yield to vehicles already on the highway before merging." },
+            { q: "What is the most common type of crash on a highway?", a: "Rear-end collisions, usually caused by tailgating." },
+            { q: "When is road ice most dangerous and slickest?", a: "When temperatures are right at the freezing point (32°F / 0°C), creating a thin layer of water over ice." },
+            { q: "What should you do before passing another vehicle on a two-lane road?", a: "Look ahead to ensure there is enough clear space and time to complete the pass." },
+            { q: "What should you do if another vehicle is passing you?", a: "Maintain your speed or slow down slightly, and stay in your lane." },
+            { q: "What is the function of the vehicle's exhaust system?", a: "It carries harmful, poisonous toxic fumes away from the engine to the rear of the car." },
+            { q: "What is a common sign of a dangerous leak in a vehicle's exhaust system?", a: "A loud rattling or booming sound under the car, or a smell of carbon monoxide inside the cabin." },
+            { q: "What does 'secondary roads' mean in North Carolina?", a: "State-maintained rural roads where steep hills and sharp curves are more likely." },
+            { q: "What is the legal definition of a moped in North Carolina?", a: "A vehicle with 2 or 3 wheels, an engine no larger than 50cc, no external gear shifting, and a maximum speed of 30 mph." },
+            { q: "What happens to your vehicle if convicted of illegal street racing in NC?", a: "Your vehicle will be seized, impounded, and sold at public auction, and your license will be revoked." },
+            { q: "Where is the biggest 'No-Zone' located on a large tractor-trailer truck?", a: "Directly behind the truck trailer." },
+            { q: "What should you do if a large truck is backing up into a driveway?", a: "Stop completely and wait until the truck finishes maneuvering." },
+            { q: "What is the rule when two cars arrive at an intersection from opposite directions?", a: "The car turning left must yield the right-of-way to the oncoming vehicle going straight." },
+            { q: "What is the definition of 'defensive driving'?", a: "Anticipating potential hazards by constantly scanning the road ahead." },
+            { q: "What is the '3-Second Rule' used for?", a: "Determining a safe following distance behind the vehicle in front of you." },
+            { q: "When should you increase your following distance from 3 seconds to 4 or 5 seconds?", a: "In bad weather, when following large trucks, or on slippery roads." },
+            { q: "What should you do if a car is tailgating you closely?", a: "Do not slam your brakes; slow down gradually or move to another lane." },
+            { q: "What should you do if an oncoming vehicle does not dim its high-beam headlights?", a: "Flash your high beams once quickly, then look down toward the right edge of your lane." },
+            { q: "When is it legal to pass another vehicle on the right side on a 2-lane road?", a: "Only when the vehicle ahead is making a left-hand turn and there is enough space to pass safely." },
+            { q: "What should you do if you pull up to an intersection with a traffic light that is completely out?", a: "Treat the intersection as an all-way 4-way stop." },
+            { q: "What does a solid white line between traffic lanes mean?", a: "Lane changes are discouraged or restricted." },
+            { q: "What does a double solid yellow line down the middle of a two-lane road mean?", a: "Passing is strictly prohibited for traffic in both directions." },
+            { q: "What does a painted yellow median or central turning lane mean?", a: "It is strictly for vehicles making left-hand turns." },
+            { q: "What is the default speed limit inside cities and towns in NC?", a: "35 mph (unless posted otherwise)" },
+            { q: "What is the default speed limit outside cities and towns in NC?", a: "55 mph (unless posted otherwise)" },
+            { q: "What is the typical speed limit in a school zone when lights are flashing?", a: "20-25 mph during designated arrival/dismissal hours" },
+            { q: "What is the maximum legal speed limit for a regular school bus in NC?", a: "45 mph" },
+            { q: "What is the maximum legal speed limit for a school activity bus in NC?", a: "55 mph" },
+            { q: "What is the maximum speed farm equipment usually travels on rural roads?", a: "15-20 mph" },
+            { q: "What is the total stopping distance under ideal conditions at 55 mph?", a: "211 feet (reaction time + braking distance)" },
+            { q: "What is the legal BAC limit for standard drivers age 21 and older in NC?", a: "0.08%" },
+            { q: "What is the legal BAC limit for commercial drivers (CDL) in NC?", a: "0.04%" },
+            { q: "What is the legal BAC limit for drivers under 21 years old in NC?", a: "0.00% (Zero Tolerance)" },
+            { q: "What does the Implied Consent Law mean if you refuse a chemical test?", a: "Immediate 30-day civil revocation + 1-year mandatory license revocation by NCDMV" },
+            { q: "What old law did the Safe Roads Act of 1983 change?", a: "It consolidated all previous drunk driving laws into one single offense: DWI" },
+            { q: "What is the license revocation length for a 1st DWI conviction?", a: "1-year license revocation" },
+            { q: "What is the license revocation length for a 2nd DWI conviction?", a: "4-year license revocation" },
+            { q: "What is the license revocation length for a 3rd DWI conviction?", a: "Permanent revocation (eligible for review after 3 years)" },
+            { q: "What is the penalty for a 4th DWI conviction in NC?", a: "Permanent license revocation + Class F Felony" },
+            { q: "When is an Ignition Interlock Device (IID) required upon license reinstatement?", a: "When BAC was 0.15% or higher, or upon a second DWI conviction within 7 years" },
+            { q: "How much is the license restoration fee for an alcohol-related revocation?", a: "$167.25" },
+            { q: "What is the license penalty for a 2nd Open Container offense?", a: "1-year license revocation" },
+            { q: "What is the license penalty for an underage person buying or attempting to buy alcohol?", a: "1-year mandatory license revocation" },
+            { q: "What is the license penalty for using or lending a fake ID to buy alcohol?", a: "1-year mandatory license revocation" },
+            { q: "What is the license penalty for aiding/abetting an underage person in buying alcohol?", a: "1-year mandatory license revocation (applies to under and over 21)" },
+            { q: "How many points within 3 years results in a 1st license suspension?", a: "12 points (results in a 60-day suspension)" },
+            { q: "How many points within 3 years after reinstatement results in a 2nd suspension?", a: "8 points (results in a 6-month suspension)" },
+            { q: "How many points can be deducted by completing a Driver Improvement Clinic?", a: "3 points (eligible once you reach 7 points; usable once every 5 years)" },
+            { q: "How many points is passing a stopped school bus?", a: "5 points (highest non-commercial violation)" },
+            { q: "How many points is aggressive driving?", a: "5 points" },
+            { q: "How many points is reckless driving, tailgating, or passing on a curve/hill?", a: "4 points" },
+            { q: "How many points is speeding over 55 mph?", a: "4 points" },
+            { q: "How many points is running a red light, running a stop sign, or driving without insurance?", a: "3 points" },
+            { q: "How many points is speeding in a school zone or failing to yield right-of-way?", a: "3 points" },
+            { q: "How many points is illegal turns, improper passing, or improper equipment?", a: "2 points" },
+            { q: "How many points is littering from a vehicle in NC?", a: "1 point" },
+            { q: "What triggers a mandatory 30-day revocation for speeding alone?", a: "Speeding more than 15 mph over the limit at a speed higher than 55 mph" },
+            { q: "What triggers a mandatory minimum 30-day revocation for extreme speed?", a: "Driving over 80 mph" },
+            { q: "What triggers an automatic revocation involving speeding over 55 mph and driving style?", a: "Getting convicted of speeding over 55 mph AND reckless driving within the same 12 months" },
+            { q: "What triggers a 60-day mandatory license revocation for repeated speeding?", a: "Two convictions of speeding over 55 mph within a 12-month period" },
+            { q: "When must headlights be turned on in NC?", a: "From sunset to sunrise, when visibility is 400 feet or less, or whenever windshield wipers are in continuous use" },
+            { q: "When must you dim high beams to low beams when an oncoming car approaches?", a: "Within 500 feet of the oncoming vehicle" },
+            { q: "When must you dim high beams to low beams when following another car?", a: "Within 200 feet of the vehicle ahead" },
+            { q: "How far before a turn must you signal if the speed limit is under 45 mph?", a: "At least 100 feet before turning" },
+            { q: "How far before a turn must you signal if the speed limit is 45 mph or higher?", a: "At least 200 feet before turning" },
+            { q: "How close can you legally park to a fire hydrant in NC?", a: "No closer than 15 feet" },
+            { q: "How close can you legally park to a fire station driveway or crosswalk?", a: "No closer than 25 feet" },
+            { q: "How far from the nearest rail must you stop at a railroad crossing when a train approaches?", a: "Between 15 feet and 50 feet" },
+            { q: "How close to the curb must you park for parallel parking?", a: "Within 18 inches (1.5 feet) of the curb" },
+            { q: "What is the minimum legal total light transmission allowed for window tinting in NC?", a: "At least 35% (tint cannot block more than 65% of light)" },
+            { q: "What is the minimum legal tire tread depth in NC?", a: "2/32 of an inch" },
+            { q: "How far away must a vehicle's horn be audible?", a: "At least 200 feet away" },
+            { q: "What is the mobile device rule for drivers under 18 (Level 1 & Level 2 provisional)?", a: "Prohibited from ALL cell phone/device use (including Bluetooth/hands-free) except for emergencies" },
+            { q: "What is the seatbelt requirement in a vehicle driven by a provisional licensee?", a: "EVERY occupant in the vehicle must wear a seatbelt, regardless of age or seat position" },
+            { q: "What is the fine for passing a stopped school bus in NC?", a: "Minimum $500 fine + 5 points (criminal misdemeanor)" },
+            { q: "What is the fine for violating the Move Over law for emergency vehicles?", a: "$250 fine + court costs (must move over or slow down 20 mph below limit)" },
+            { q: "What is the minimum fine for littering from a vehicle in NC?", a: "Minimum $250 fine + 1 point" },
+            { q: "When must a vehicle crash be reported immediately to law enforcement?", a: "If it involves injury, death, or total property damage of $1,000 or more" },
+            { q: "What is the procedure for brake failure while driving?", a: "Shift to lower gear, pump brake pedal fast/hard (if non-ABS), and apply emergency brake gradually" },
+            { q: "What is the procedure for a tire blowout while driving?", a: "Grip wheel firmly, hold straight, ease off gas gradually, do NOT slam brakes until vehicle slows down" },
+            { q: "At what speed can hydroplaning begin on wet roads?", a: "As low as 35 mph" },
+            { q: "What should you do if your car begins hydroplaning or skidding?", a: "Ease off gas, do NOT hit brakes, steer in the direction the rear of the car is skidding" },
+            { q: "What is the 'Fender Bender Rule' on highways?", a: "Move the vehicle to the shoulder if involved in a minor crash with no injuries to avoid blocking lanes" }
+        ];
+
+        let currentIndex = 0;
+        let isFlipped = false;
+        const isPaidUser = false; // Toggle to true once payment integration is added
+        const freeLimit = 15; // Number of cards users can view for free before paywall pops up
+
+        const cardElement = id("flashcard");
+        const questionElement = id("question-text");
+        const answerElement = id("answer-text");
+        const counterElement = id("card-counter");
+        const progressBar = id("progress-bar");
+        const modal = id("paywall-modal");
+
+        function id(e) { return document.getElementById(e); }
+
+        function renderCard() {
+            isFlipped = false;
+            cardElement.classList.remove("flipped");
+            
+            setTimeout(() => {
+                questionElement.textContent = flashcards[currentIndex].q;
+                answerElement.textContent = flashcards[currentIndex].a;
+                counterElement.textContent = `Card ${currentIndex + 1} of ${flashcards.length}`;
+                progressBar.style.width = `${((currentIndex + 1) / flashcards.length) * 100}%`;
+            }, 150);
+        }
+
+        function flipCard() {
+            isFlipped = !isFlipped;
+            cardElement.classList.toggle("flipped");
+        }
+
+        function nextCard() {
+            if (!isPaidUser && currentIndex >= freeLimit - 1) {
+                modal.classList.add("active");
+                return;
+            }
+            if (currentIndex < flashcards.length - 1) {
+                currentIndex++;
+                renderCard();
+            }
+        }
+
+        function prevCard() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderCard();
+            }
+        }
+
+        function handleCheckout() {
+            alert("Redirecting to Stripe / payment gateway...");
+        }
+
+        // Initialize
+        renderCard();
+    </script>
+</body>
+</html>
